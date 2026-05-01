@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="apple-mobile-web-app-title" content="Energie"/>
+<meta name="theme-color" content="#f5f0e8"/>
+<title>Energie Briefing</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:      #f5f0e8;
+  --bg2:     #ede7d9;
+  --bg3:     #e3dccf;
+  --border:  #cec6b8;
+  --ink:     #1a1510;
+  --ink2:    #4a3f35;
+  --ink3:    #9c9488;
+  --green:   #166534;
+  --green-l: #dcfce7;
+  --amber:   #92400e;
+  --amber-l: #fef3c7;
+  --red:     #991b1b;
+  --red-l:   #fee2e2;
+  --ev:      #3730a3;
+  --ev-l:    #e0e7ff;
+  --solar:   #78350f;
+  --solar-l: #fef9c3;
+  --neg:     #86198f;
+  --neg-l:   #fdf4ff;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg)}
+body{font-family:'DM Sans',sans-serif;color:var(--ink);padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);overscroll-behavior:none}
+
+.header{background:var(--bg);border-bottom:2px double var(--border);padding:12px 18px 10px;position:sticky;top:0;z-index:100}
+.header-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.logo{font-family:'Playfair Display',serif;font-size:22px;font-weight:900;color:var(--ink);letter-spacing:-0.5px}
+.logo-sub{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink3);margin-top:1px}
+.header-date{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);text-align:right;line-height:1.5}
+.refresh-btn{background:none;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;font-size:14px;cursor:pointer;color:var(--ink2);display:flex;align-items:center;justify-content:center}
+
+.tabs{display:flex;background:var(--bg2);border-radius:10px;padding:3px;gap:2px;overflow-x:auto}
+.tab{flex:1;min-width:44px;border:none;background:none;border-radius:7px;padding:7px 4px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.04em;text-transform:uppercase;color:var(--ink3);cursor:pointer;transition:all 0.2s;font-weight:500;white-space:nowrap}
+.tab.on{background:var(--bg);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,0.1)}
+.tab.alert{color:var(--neg);font-weight:600}
+
+.status-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:8px 18px;border-bottom:1px solid var(--border);background:var(--bg2)}
+.status-item{display:flex;align-items:center;gap:4px;font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);letter-spacing:0.04em}
+.s-dot{width:5px;height:5px;border-radius:50%}
+
+.scroll-area{padding:16px 16px 40px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+
+.card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,0.05)}
+.card-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px;font-weight:500}
+
+.kpi-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.kpi{background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 14px;box-shadow:0 1px 3px rgba(0,0,0,0.05)}
+.kpi-label{font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;font-family:'DM Mono',monospace}
+.kpi-val{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;line-height:1}
+.kpi-sub{font-size:10px;color:var(--ink3);margin-top:3px}
+
+.banner{border-radius:10px;padding:10px 13px;font-size:12px;margin-bottom:10px;line-height:1.5}
+.b-green{background:var(--green-l);border:1px solid #86efac;color:var(--green)}
+.b-amber{background:var(--amber-l);border:1px solid #fcd34d;color:var(--amber)}
+.b-red{background:var(--red-l);border:1px solid #fca5a5;color:var(--red)}
+.b-ev{background:var(--ev-l);border:1px solid #a5b4fc;color:var(--ev)}
+.b-neg{background:var(--neg-l);border:1px solid #e879f9;color:var(--neg)}
+.neg-pulse{animation:negpulse 1.5s infinite}
+@keyframes negpulse{0%,100%{background:var(--neg-l)}50%{background:#fae8ff}}
+
+.pill{display:inline-block;border-radius:4px;padding:2px 7px;font-family:'DM Mono',monospace;font-size:9px;font-weight:500;letter-spacing:0.04em}
+
+.ev-window{border-radius:10px;padding:11px 13px;margin-bottom:8px;border:1px solid transparent}
+.ev-window.rank-1{background:var(--ev-l);border-color:#a5b4fc}
+.ev-window.rank-2{background:var(--green-l);border-color:#86efac}
+.ev-window.rank-3{background:var(--amber-l);border-color:#fcd34d}
+.ev-window.rank-n{background:var(--bg2);border-color:var(--border)}
+.ev-window-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.ev-time{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--ink)}
+.ev-badge{font-family:'DM Mono',monospace;font-size:9px;font-weight:500;letter-spacing:0.04em;border-radius:4px;padding:3px 8px}
+.badge-1{background:var(--ev);color:#fff}
+.badge-2{background:var(--green);color:#fff}
+.badge-3{background:var(--amber);color:#fff}
+.badge-n{background:var(--bg3);color:var(--ink3)}
+.ev-details{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--ink2);font-family:'DM Mono',monospace}
+
+.hour-slots{display:flex;gap:3px;margin:6px 0 3px}
+.hour-slot{flex:1;height:8px;border-radius:2px;position:relative;overflow:hidden}
+
+.price-chart{display:flex;align-items:flex-end;gap:2px;height:60px;margin:8px 0 3px}
+.pc-col{flex:1;position:relative;display:flex;flex-direction:column;align-items:center}
+.pc-bar{width:100%;border-radius:2px 2px 0 0;min-height:3px}
+.pc-label{font-family:'DM Mono',monospace;font-size:7px;color:var(--ink3);margin-top:2px}
+
+.slot-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--bg3)}
+.slot-row:last-child{border-bottom:none}
+.slot-time{font-family:'DM Mono',monospace;font-size:13px;min-width:40px;color:var(--ink);font-weight:500}
+.slot-bar{flex:1;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.slot-fill{height:100%;border-radius:3px}
+.slot-price{font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);min-width:58px;text-align:right}
+
+.wx-strip{display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.wx-item{flex:0 0 52px;text-align:center;padding:6px 4px;border-right:1px solid var(--bg3)}
+.wx-item:last-child{border-right:none}
+.wx-h{font-family:'DM Mono',monospace;font-size:8px;color:var(--ink3)}
+.wx-ico{font-size:18px;margin:3px 0}
+.wx-t{font-family:'DM Mono',monospace;font-size:10px}
+.wx-w{font-size:8px;color:var(--solar);font-family:'DM Mono',monospace;margin-top:1px}
+
+.loading{text-align:center;padding:60px 20px;color:var(--ink3);font-style:italic;font-size:14px}
+@media(min-width:600px){.scroll-area{max-width:480px;margin:0 auto}.logo{font-size:26px}}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="logo">⚡ Energie</div>
+      <div class="logo-sub">Dagelijkse briefing</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="header-date" id="hdr-date"></div>
+      <button class="refresh-btn" onclick="init()">↻</button>
+    </div>
+  </div>
+  <div class="tabs" id="tabs">
+    <button class="tab on"  onclick="showTab('ev',this)">🚗 EV</button>
+    <button class="tab"     onclick="showTab('dag',this)">📅 Dag</button>
+    <button class="tab"     onclick="showTab('weer',this)">🌤 Weer</button>
+    <button class="tab"     onclick="showTab('p1',this)">📡 P1</button>
+    <button class="tab" id="tab-zon" onclick="showTab('zon',this)">⚡ Zon</button>
+  </div>
+</div>
+
+<div class="status-bar" id="status-bar">
+  <div class="status-item"><span class="s-dot" style="background:var(--ink3)"></span>Laden…</div>
+</div>
+
+<div class="scroll-area" id="content">
+  <div class="loading">Prijzen en weerdata ophalen…</div>
+</div>
+
+<script>
+var HW_IP      = "192.168.2.15";
+var EV_CAP     = 50;
+var EV_KW      = 7.4;
+var EV_SOC     = 30;
+var EV_TGT     = 80;
+var PANEL_KWP  = 4;
+
+var G = {};
+var activeTab = 'ev';
+
+function hStr(h){ return (h<10?'0':'')+h+':00'; }
+function euro(v){ return '€'+(+v).toFixed(4); }
+function euro2(v){ return '€'+(+v).toFixed(2); }
+function pColor(p){ return p<0.09?'#166534':p<0.14?'#3f6212':p<0.18?'#92400e':p<0.22?'#b91c1c':'#7f1d1d'; }
+function pBg(p){ return p<0.09?'#dcfce7':p<0.14?'#d9f99d':p<0.18?'#fef3c7':p<0.22?'#fee2e2':'#fecaca'; }
+function pLabel(p){ return p<0.09?'Zeer goedkoop':p<0.14?'Goedkoop':p<0.18?'Normaal':p<0.22?'Duur':'Zeer duur'; }
+function calcSolar(c,r,k){ return Math.max(0, r*k*Math.max(0,1-(c/100)*0.75)); }
+
+var WI={0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',51:'🌦️',61:'🌧️',63:'🌧️',65:'🌧️',71:'🌨️',75:'❄️',80:'🌦️',81:'🌧️',95:'⛈️'};
+var WD={0:'Helder',1:'Overwegend helder',2:'Gedeeltelijk bewolkt',3:'Bewolkt',45:'Mist',51:'Motregen',61:'Regen',63:'Matige regen',65:'Zware regen',80:'Buien',95:'Onweer'};
+
+function showTab(tab, btn) {
+  activeTab = tab;
+  document.querySelectorAll('.tab').forEach(function(b){ b.classList.remove('on'); });
+  if(btn) btn.classList.add('on');
+  renderTab();
+}
+
+// ── Fallback prices ──────────────────────────────────────────────────────────
+function fallbackPrices() {
+  var pat = [0.092,0.085,0.080,0.078,0.082,0.095,0.118,0.145,0.162,0.155,0.140,0.128,
+             0.122,0.118,0.115,0.120,0.138,0.165,0.178,0.172,0.158,0.140,0.118,0.098,
+             0.090,0.083,0.078,0.075,0.080,0.093,0.115,0.142,0.158,0.150,0.136,0.124,
+             0.118,0.115,0.112,0.117,0.135,0.160,0.172,0.165,0.152,0.136,0.115,0.095];
+  var d = new Date(); d.setHours(0,0,0,0);
+  return pat.map(function(price,i){
+    return { time: new Date(d.getTime()+i*3600000), price: price, source: 'schatting' };
+  });
+}
+
+async function fetchPrices() {
+  try {
+    var d = new Date();
+    var fmt = function(x){ return x.toISOString().slice(0,10); };
+    var end = new Date(d); end.setDate(end.getDate()+2);
+    var res = await fetch('https://api.energy-charts.info/price?bzn=NL&start='+fmt(d)+'&end='+fmt(end), { signal: AbortSignal.timeout(6000) });
+    var data = await res.json();
+    if(!data.unix_seconds) throw new Error('no data');
+    var prices = data.unix_seconds.map(function(ts,i){
+      return { time: new Date(ts*1000), price: Math.max(-0.5, (data.price[i]/1000)+0.072), source: 'eneco' };
+    });
+    return { prices: prices, source: 'eneco' };
+  } catch(e) {
+    return { prices: fallbackPrices(), source: 'schatting' };
+  }
+}
+
+async function fetchWeather(lat, lon) {
+  var url = 'https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon
+    +'&current=temperature_2m,weathercode,cloudcover,windspeed_10m'
+    +'&hourly=temperature_2m,weathercode,cloudcover,direct_radiation,diffuse_radiation'
+    +'&timezone=auto&forecast_days=3';
+  var data = await fetch(url).then(function(r){ return r.json(); });
+  var cur = data.current;
+  var now = new Date();
+  var h = now.getHours();
+  var ds = now.toDateString();
+  var idx = -1;
+  for(var i=0;i<data.hourly.time.length;i++){
+    var t = new Date(data.hourly.time[i]);
+    if(t.getHours()===h && t.toDateString()===ds){ idx=i; break; }
+  }
+  var rad = idx>=0 ? (data.hourly.direct_radiation[idx]||0)+(data.hourly.diffuse_radiation[idx]||0) : 0;
+  var start = idx>=0 ? idx : 0;
+  var forecast = [];
+  for(var j=0;j<48;j++){
+    if(start+j >= data.hourly.time.length) break;
+    forecast.push({
+      time:  new Date(data.hourly.time[start+j]),
+      code:  data.hourly.weathercode[start+j],
+      cloud: data.hourly.cloudcover[start+j],
+      rad:   (data.hourly.direct_radiation[start+j]||0)+(data.hourly.diffuse_radiation[start+j]||0),
+      temp:  data.hourly.temperature_2m[start+j]
+    });
+  }
+  return {
+    cur: { temp:cur.temperature_2m, code:cur.weathercode, cloud:cur.cloudcover, wind:cur.windspeed_10m, rad:rad },
+    forecast: forecast
+  };
+}
+
+async function fetchP1() {
+  try {
+    var res = await fetch('http://'+HW_IP+'/api/v1/data', { signal: AbortSignal.timeout(2500) });
+    if(!res.ok) throw new Error('bad');
+    return await res.json();
+  } catch(e) { return null; }
+}
+
+function getLocation() {
+  return new Promise(function(resolve){
+    if(!navigator.geolocation){ resolve({lat:52.37,lon:4.9}); return; }
+    var done = false;
+    var timer = setTimeout(function(){ if(!done){ done=true; resolve({lat:52.37,lon:4.9}); } }, 3000);
+    navigator.geolocation.getCurrentPosition(
+      function(p){ if(!done){ done=true; clearTimeout(timer); resolve({lat:p.coords.latitude,lon:p.coords.longitude}); } },
+      function(){ if(!done){ done=true; clearTimeout(timer); resolve({lat:52.37,lon:4.9}); } }
+    );
+  });
+}
+
+// ── Solar-aware EV windows ───────────────────────────────────────────────────
+function computeEVWindows(prices, forecast) {
+  var needed = ((EV_TGT-EV_SOC)/100)*EV_CAP;
+  var hours  = Math.max(1, Math.ceil(needed/EV_KW));
+  var now    = new Date();
+  var pool   = prices.filter(function(p){ return p.time>=now; }).slice(0,36);
+  if(pool.length < hours) return [];
+
+  var enriched = pool.map(function(p) {
+    var fc = null;
+    for(var i=0;i<forecast.length;i++){
+      if(forecast[i].time.getHours()===p.time.getHours() && forecast[i].time.toDateString()===p.time.toDateString()){
+        fc = forecast[i]; break;
+      }
+    }
+    var solarKw     = fc ? calcSolar(fc.cloud, fc.rad, PANEL_KWP)/1000 : 0;
+    var netKw       = Math.max(0, EV_KW - solarKw);
+    var solarUsedKw = Math.min(solarKw, EV_KW);
+    return { time:p.time, price:p.price, source:p.source, solarKw:solarKw, netKw:netKw, solarUsedKw:solarUsedKw };
+  });
+
+  var windows = [];
+  for(var i=0; i<=enriched.length-hours; i++) {
+    var block      = enriched.slice(i, i+hours);
+    var grossCost  = 0, netCost = 0, solarKwh = 0;
+    for(var j=0;j<block.length;j++){
+      grossCost += block[j].price * EV_KW;
+      netCost   += block[j].price * block[j].netKw;
+      solarKwh  += block[j].solarUsedKw;
+    }
+    windows.push({
+      block:     block,
+      grossCost: grossCost,
+      netCost:   netCost,
+      solarKwh:  solarKwh,
+      avgNet:    netCost / needed,
+      start:     block[0].time,
+      end:       block[block.length-1].time,
+      hours:     hours,
+      needed:    needed,
+      saving:    grossCost - netCost
+    });
+  }
+  windows.sort(function(a,b){ return a.netCost - b.netCost; });
+  return windows;
+}
+
+// ── Render ───────────────────────────────────────────────────────────────────
+function renderTab() {
+  var now       = new Date();
+  var prices    = G.prices || [];
+  var forecast  = G.forecast || [];
+  var wx        = G.wx;
+  var p1        = G.p1;
+
+  var curPrice  = null;
+  for(var i=0;i<prices.length;i++){
+    if(prices[i].time.getHours()===now.getHours() && prices[i].time.toDateString()===now.toDateString()){
+      curPrice = prices[i]; break;
+    }
+  }
+  var solar = wx ? Math.round(calcSolar(wx.cloud, wx.rad, PANEL_KWP)) : 0;
+  var next36 = prices.filter(function(p){ return p.time>=now; }).slice(0,36);
+  var next24 = next36.slice(0,24);
+  var negHours = next36.filter(function(p){ return p.price<=0; });
+  var negNow   = curPrice && curPrice.price<=0;
+  var negSoon  = negHours.filter(function(p){ return p.time>now && (p.time-now)<4*3600000; });
+  var maxP     = 0.01;
+  for(var i=0;i<next24.length;i++){ if(next24[i].price>maxP) maxP=next24[i].price; }
+
+  var html = '';
+
+  // ── EV TAB ──────────────────────────────────────────────────────────────
+  if(activeTab==='ev') {
+    var windows = computeEVWindows(prices, forecast);
+    var needed  = ((EV_TGT-EV_SOC)/100)*EV_CAP;
+    var hours   = Math.ceil(needed/EV_KW);
+    var maxCost = windows.length ? windows[windows.length-1].netCost : 1;
+
+    html += '<div class="banner b-ev">🚗 Accu van '+EV_SOC+'% naar '+EV_TGT+'% &nbsp;·&nbsp; '+needed.toFixed(0)+' kWh &nbsp;·&nbsp; ~'+hours+' uur op '+EV_KW+' kW</div>';
+
+    if(windows.length===0) {
+      html += '<div class="card"><div style="color:var(--ink3);font-style:italic">Geen laadvensters beschikbaar.</div></div>';
+    } else {
+      var best = windows[0];
+      var worst = windows[windows.length-1];
+
+      // Best window card
+      html += '<div class="card" style="border-color:#a5b4fc;background:var(--ev-l)">';
+      html += '<div class="card-label" style="color:var(--ev)">⭐ Beste laadmoment</div>';
+      html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">';
+      html += '<div>';
+      html += '<div style="font-family:Playfair Display,serif;font-size:26px;font-weight:700;color:var(--ev)">'+hStr(best.start.getHours())+'</div>';
+      html += '<div style="font-size:11px;color:var(--ink2);margin-top:2px">t/m '+hStr(best.end.getHours()+1)+' &nbsp;·&nbsp; '+hours+' uur</div>';
+      html += '</div>';
+      html += '<div style="text-align:right">';
+      html += '<div style="font-family:Playfair Display,serif;font-size:22px;font-weight:700;color:var(--ev)">'+euro2(best.netCost)+'</div>';
+      html += '<div style="font-size:10px;color:var(--ink3);margin-top:1px">netto na zon</div>';
+      if(best.solarKwh>0.1) html += '<div style="font-size:10px;color:var(--solar);margin-top:1px">☀️ '+best.solarKwh.toFixed(1)+' kWh gratis</div>';
+      html += '</div></div>';
+
+      // Stats grid
+      html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px">';
+      var statItems = [
+        ['Netkosten', euro2(best.netCost), 'var(--ev)'],
+        ['Gratis zon', best.solarKwh.toFixed(1)+' kWh', 'var(--solar)'],
+        ['Besparing', euro2(worst.netCost - best.netCost), 'var(--green)']
+      ];
+      for(var i=0;i<statItems.length;i++){
+        html += '<div style="background:rgba(255,255,255,0.6);border-radius:7px;padding:7px 8px;text-align:center">';
+        html += '<div style="font-size:8px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:2px">'+statItems[i][0]+'</div>';
+        html += '<div style="font-family:DM Mono,monospace;font-size:12px;font-weight:500;color:'+statItems[i][2]+'">'+statItems[i][1]+'</div>';
+        html += '</div>';
+      }
+      html += '</div>';
+
+      // Hour blocks
+      html += '<div class="hour-slots">';
+      for(var i=0;i<best.block.length;i++){
+        var p = best.block[i];
+        var sp = Math.min(100, (p.solarKw/EV_KW)*100);
+        html += '<div class="hour-slot" style="background:'+pColor(p.price)+'" title="'+hStr(p.time.getHours())+' · '+euro(p.price)+'">';
+        if(sp>5) html += '<div style="position:absolute;bottom:0;left:0;width:100%;height:'+sp+'%;background:rgba(253,224,71,0.55)"></div>';
+        html += '</div>';
+      }
+      html += '</div>';
+      html += '<div style="display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:8px;color:var(--ink3)">';
+      html += '<span>'+hStr(best.start.getHours())+'</span>';
+      html += '<span style="color:var(--solar)">■ geel = gratis zon</span>';
+      html += '<span>'+hStr(best.end.getHours()+1)+'</span>';
+      html += '</div>';
+      html += '</div>'; // card
+
+      // All windows
+      html += '<div class="card">';
+      html += '<div class="card-label">Alle laadvensters — gesorteerd op netto kosten</div>';
+      html += '<div style="font-size:11px;color:var(--ink3);margin-bottom:10px">Inclusief gratis zonne-energie afgetrokken van de kosten</div>';
+
+      var showMax = Math.min(16, windows.length);
+      for(var i=0;i<showMax;i++){
+        var w = windows[i];
+        var rank  = i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'rank-n';
+        var badge = i===0?'badge-1':i===1?'badge-2':i===2?'badge-3':'badge-n';
+        var bTxt  = i===0?'Beste':i===1?'2e keuze':i===2?'3e keuze':'#'+(i+1);
+        var dayLabel = w.start.toDateString()===now.toDateString()?'Vandaag':'Morgen';
+        var pct = Math.min(100, (w.netCost/maxCost)*100);
+
+        html += '<div class="ev-window '+rank+'">';
+        html += '<div class="ev-window-header">';
+        html += '<div>';
+        html += '<div class="ev-time">'+hStr(w.start.getHours())+' – '+hStr(w.end.getHours()+1)+'</div>';
+        html += '<div style="font-size:10px;color:var(--ink3);font-family:DM Mono,monospace;margin-top:1px">'+dayLabel+'</div>';
+        html += '</div>';
+        html += '<div style="text-align:right">';
+        html += '<span class="ev-badge '+badge+'">'+bTxt+'</span>';
+        html += '<div style="font-family:DM Mono,monospace;font-size:13px;font-weight:500;margin-top:4px;color:var(--ink)">'+euro2(w.netCost)+'</div>';
+        if(w.solarKwh>0.1) html += '<div style="font-size:9px;color:var(--solar);margin-top:1px">☀️ '+w.solarKwh.toFixed(1)+' kWh gratis</div>';
+        html += '</div></div>';
+
+        html += '<div style="height:5px;background:rgba(0,0,0,0.08);border-radius:3px;overflow:hidden;margin-bottom:6px">';
+        html += '<div style="height:100%;width:'+pct+'%;background:'+pColor(w.avgNet)+';border-radius:3px"></div></div>';
+
+        html += '<div class="ev-details">';
+        html += '<span>netto <strong>'+euro(w.avgNet)+'/kWh</strong></span>';
+        html += '<span><span class="pill" style="background:'+pBg(w.avgNet)+';color:'+pColor(w.avgNet)+'">'+pLabel(w.avgNet)+'</span></span>';
+        if(w.solarKwh>0.1) html += '<span style="color:var(--solar)">☀️ '+w.solarKwh.toFixed(1)+' kWh zon</span>';
+        html += '</div>';
+
+        html += '<div class="hour-slots" style="margin-top:7px">';
+        for(var j=0;j<w.block.length;j++){
+          var bp = w.block[j];
+          var bsp = Math.min(100,(bp.solarKw/EV_KW)*100);
+          html += '<div class="hour-slot" style="background:'+pColor(bp.price)+';opacity:0.85" title="'+hStr(bp.time.getHours())+' · '+euro(bp.price)+'">';
+          if(bsp>5) html += '<div style="position:absolute;bottom:0;left:0;width:100%;height:'+bsp+'%;background:rgba(253,224,71,0.6)"></div>';
+          html += '</div>';
+        }
+        html += '</div>';
+        html += '</div>';
+      }
+      html += '</div>';
+    }
+  }
+
+  // ── DAG TAB ─────────────────────────────────────────────────────────────
+  else if(activeTab==='dag') {
+    if(negNow) {
+      html += '<div class="banner b-neg neg-pulse">⚡ <strong>Negatieve prijs nu: '+euro(curPrice.price)+'/kWh</strong><br/><span style="font-size:11px">Zet je SolarEdge omvormer uit! Zie de ⚡ Zon tab.</span></div>';
+    } else if(negSoon.length>0) {
+      var negTimes = negSoon.map(function(p){ return hStr(p.time.getHours()); }).join(', ');
+      html += '<div class="banner b-neg">⚠️ <strong>Negatieve prijs verwacht:</strong> '+negTimes+'<br/><span style="font-size:11px">Zet je omvormer tijdig uit. Zie de ⚡ Zon tab.</span></div>';
+    }
+
+    html += '<div class="kpi-row">';
+    html += '<div class="kpi"><div class="kpi-label">Prijs nu</div>';
+    if(curPrice) {
+      html += '<div class="kpi-val" style="color:'+pColor(curPrice.price)+'">'+euro(curPrice.price)+'<span style="font-size:12px;font-weight:400;color:var(--ink3)">/kWh</span></div>';
+      html += '<div class="kpi-sub"><span class="pill" style="background:'+pBg(curPrice.price)+';color:'+pColor(curPrice.price)+'">'+pLabel(curPrice.price)+'</span></div>';
+    } else { html += '<div class="kpi-val">–</div>'; }
+    html += '</div>';
+    html += '<div class="kpi"><div class="kpi-label">Zon nu</div>';
+    html += '<div class="kpi-val" style="color:var(--solar)">'+solar+'<span style="font-size:12px;font-weight:400;color:var(--ink3)"> W</span></div>';
+    html += '<div class="kpi-sub">'+PANEL_KWP+' kWp</div></div></div>';
+
+    // Price chart
+    html += '<div class="card"><div class="card-label">Prijsverloop komende 24 uur</div>';
+    html += '<div class="price-chart">';
+    var evWindows2 = computeEVWindows(prices, forecast);
+    for(var i=0;i<next24.length;i++){
+      var p = next24[i];
+      var isNow2 = p.time.getHours()===now.getHours() && p.time.toDateString()===now.toDateString();
+      var isEV = false;
+      if(evWindows2.length>0){
+        for(var j=0;j<evWindows2[0].block.length;j++){
+          if(evWindows2[0].block[j].time.getHours()===p.time.getHours() && evWindows2[0].block[j].time.toDateString()===p.time.toDateString()){ isEV=true; break; }
+        }
+      }
+      var isNeg = p.price<=0;
+      var fc2 = null;
+      for(var j=0;j<forecast.length;j++){ if(forecast[j].time.getHours()===p.time.getHours()&&forecast[j].time.toDateString()===p.time.toDateString()){fc2=forecast[j];break;} }
+      var sw2 = fc2 ? calcSolar(fc2.cloud,fc2.rad,PANEL_KWP) : 0;
+      var pct2 = Math.max(4,(p.price>0?p.price/maxP:0.02)*100);
+      var barColor = isNeg?'#86198f':isEV?'var(--ev)':isNow2?'var(--ink)':pColor(p.price);
+      html += '<div class="pc-col">';
+      if(sw2>100) html += '<div style="width:100%;height:'+Math.min(15,(sw2/3500)*20)+'px;background:rgba(120,53,15,0.2);border-radius:2px 2px 0 0;margin-bottom:1px;min-height:2px"></div>';
+      html += '<div class="pc-bar" style="height:'+pct2+'%;background:'+barColor+';'+(isNow2?'outline:2px solid var(--ink);outline-offset:1px':'')+'"></div>';
+      html += '</div>';
+    }
+    html += '</div>';
+    html += '<div style="display:flex;justify-content:space-between">';
+    var filtered24 = next24.filter(function(_,i){ return i%6===0; });
+    for(var i=0;i<filtered24.length;i++) html += '<span class="pc-label">'+filtered24[i].time.getHours()+'u</span>';
+    html += '</div></div>';
+
+    // Best hours today
+    var todayPool = prices.filter(function(p){ return p.time.toDateString()===now.toDateString()&&p.time>=now; });
+    var cheap5 = todayPool.slice().sort(function(a,b){return a.price-b.price;}).slice(0,5);
+    html += '<div class="card"><div class="card-label">Beste uren vandaag</div>';
+    for(var i=0;i<cheap5.length;i++){
+      var p = cheap5[i];
+      var fc3=null; for(var j=0;j<forecast.length;j++){if(forecast[j].time.getHours()===p.time.getHours()&&forecast[j].time.toDateString()===p.time.toDateString()){fc3=forecast[j];break;}}
+      var sw3 = fc3?Math.round(calcSolar(fc3.cloud,fc3.rad,PANEL_KWP)):0;
+      html += '<div class="slot-row">';
+      html += '<div class="slot-time">'+hStr(p.time.getHours())+'</div>';
+      html += '<div class="slot-bar"><div class="slot-fill" style="width:'+Math.min(100,(p.price/maxP)*100)+'%;background:'+pColor(p.price)+'"></div></div>';
+      html += '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">';
+      html += '<span class="pill" style="background:'+pBg(p.price)+';color:'+pColor(p.price)+'">'+euro(p.price)+'</span>';
+      if(sw3>300) html += '<span style="font-size:8px;color:var(--solar);font-family:DM Mono,monospace">☀️'+sw3+'W</span>';
+      html += '</div></div>';
+    }
+    html += '</div>';
+
+    // Tomorrow
+    var tom = new Date(now); tom.setDate(tom.getDate()+1);
+    var tomPool = prices.filter(function(p){ return p.time.toDateString()===tom.toDateString(); });
+    if(tomPool.length>0){
+      var cheap5t = tomPool.slice().sort(function(a,b){return a.price-b.price;}).slice(0,5);
+      html += '<div class="card"><div class="card-label">Beste uren morgen</div>';
+      for(var i=0;i<cheap5t.length;i++){
+        var p=cheap5t[i];
+        html += '<div class="slot-row"><div class="slot-time">'+hStr(p.time.getHours())+'</div>';
+        html += '<div class="slot-bar"><div class="slot-fill" style="width:'+Math.min(100,(p.price/maxP)*100)+'%;background:'+pColor(p.price)+'"></div></div>';
+        html += '<div class="slot-price"><span class="pill" style="background:'+pBg(p.price)+';color:'+pColor(p.price)+'">'+euro(p.price)+'</span></div></div>';
+      }
+      html += '</div>';
+    } else {
+      html += '<div class="banner b-amber">📅 Morgenochtend prijzen nog niet beschikbaar — ENTSO-E publiceert om ~14:00.</div>';
+    }
+
+    // Warmtepomp
+    var sorted24 = next24.slice().sort(function(a,b){return a.price-b.price;});
+    var cheapH4 = sorted24.slice(0,4).map(function(p){return p.time.getHours();});
+    var expH3   = sorted24.slice(-3).map(function(p){return p.time.getHours();});
+    html += '<div class="card"><div class="card-label">🌡 Remeha eLga Ace</div>';
+    html += '<div style="margin-bottom:8px"><div style="font-size:11px;font-weight:600;color:var(--ink);margin-bottom:5px">🟢 Warmtepomp aan</div><div style="display:flex;flex-wrap:wrap;gap:4px">';
+    for(var i=0;i<cheapH4.length;i++) html += '<span class="pill" style="background:var(--green-l);color:var(--green)">'+hStr(cheapH4[i])+'</span>';
+    html += '</div></div><hr style="border:none;border-top:1px solid var(--bg3);margin:8px 0">';
+    html += '<div><div style="font-size:11px;font-weight:600;color:var(--ink);margin-bottom:5px">🔴 Ketel voorkeur</div><div style="display:flex;flex-wrap:wrap;gap:4px">';
+    for(var i=0;i<expH3.length;i++) html += '<span class="pill" style="background:var(--red-l);color:var(--red)">'+hStr(expH3[i])+'</span>';
+    html += '</div></div></div>';
+  }
+
+  // ── WEER TAB ─────────────────────────────────────────────────────────────
+  else if(activeTab==='weer') {
+    if(!wx) { html='<div class="loading">Weerdata niet beschikbaar</div>'; }
+    else {
+      var totalKwh=0;
+      var solarArr=[];
+      for(var i=0;i<forecast.length;i++){
+        var f=forecast[i];
+        if(f.time.getDate()===now.getDate()){
+          var w=Math.round(calcSolar(f.cloud,f.rad,PANEL_KWP));
+          totalKwh+=w/1000;
+          if(w>100) solarArr.push({h:f.time.getHours(),w:w});
+        }
+      }
+      solarArr.sort(function(a,b){return b.w-a.w;});
+
+      html += '<div class="kpi-row">';
+      html += '<div class="kpi"><div class="kpi-label">Nu</div><div class="kpi-val">'+(WI[wx.code]||'')+' '+wx.temp+'°C</div><div class="kpi-sub">'+(WD[wx.code]||'')+'</div></div>';
+      html += '<div class="kpi"><div class="kpi-label">Zon vandaag</div><div class="kpi-val" style="color:var(--solar)">'+totalKwh.toFixed(1)+'<span style="font-size:14px;font-weight:400"> kWh</span></div><div class="kpi-sub">op '+PANEL_KWP+' kWp</div></div></div>';
+
+      html += '<div class="card"><div class="card-label">Uurlijks weer</div><div class="wx-strip">';
+      for(var i=0;i<Math.min(16,forecast.length);i++){
+        var f=forecast[i];
+        var sw=Math.round(calcSolar(f.cloud,f.rad,PANEL_KWP));
+        html += '<div class="wx-item"><div class="wx-h">'+f.time.getHours()+'u</div><div class="wx-ico">'+(WI[f.code]||'🌡')+'</div><div class="wx-t">'+Math.round(f.temp)+'°</div>'+(sw>50?'<div class="wx-w">'+sw+'W</div>':'')+'</div>';
+      }
+      html += '</div></div>';
+
+      if(solarArr.length>0){
+        html += '<div class="card"><div class="card-label">Beste zonnuren vandaag</div>';
+        for(var i=0;i<Math.min(5,solarArr.length);i++){
+          var s=solarArr[i];
+          html += '<div class="slot-row"><div class="slot-time">'+hStr(s.h)+'</div>';
+          html += '<div class="slot-bar"><div class="slot-fill" style="width:'+Math.min(100,(s.w/3500)*100)+'%;background:var(--solar)"></div></div>';
+          html += '<div class="slot-price">'+s.w+'W</div></div>';
+        }
+        html += '</div>';
+      }
+
+      html += '<div class="card"><div class="card-label">Details</div>';
+      var details=[['Wind',wx.wind+' km/u'],['Bewolking',wx.cloud+'%'],['Zon nu',solar+' W']];
+      for(var i=0;i<details.length;i++){
+        html += '<div class="slot-row"><div style="font-size:12px;color:var(--ink2);flex:1">'+details[i][0]+'</div><div style="font-family:DM Mono,monospace;font-size:12px;font-weight:500">'+details[i][1]+'</div></div>';
+      }
+      html += '</div>';
+    }
+  }
+
+  // ── P1 TAB ───────────────────────────────────────────────────────────────
+  else if(activeTab==='p1') {
+    if(!p1) {
+      html += '<div class="banner b-amber">📡 P1 niet verbonden ('+HW_IP+')<br/><span style="font-size:11px">Werkt alleen op hetzelfde wifi-netwerk. Lokale API moet aan staan in de HomeWizard app.</span></div>';
+    } else {
+      html += '<div class="banner b-green">✅ P1 verbonden · '+HW_IP+'</div>';
+      html += '<div class="kpi-row">';
+      html += '<div class="kpi"><div class="kpi-label">Net vermogen</div><div class="kpi-val" style="color:var(--ev)">'+(p1.active_power_w||'-')+'<span style="font-size:14px;font-weight:400;color:var(--ink3)"> W</span></div></div>';
+      html += '<div class="kpi"><div class="kpi-label">Gas totaal</div><div class="kpi-val" style="color:var(--amber)">'+(p1.total_gas_m3||'-')+'<span style="font-size:14px;font-weight:400;color:var(--ink3)"> m³</span></div></div></div>';
+      html += '<div class="card"><div class="card-label">Stroomteller</div>';
+      var p1rows=[
+        ['T1 afgenomen',(p1.total_power_import_t1_kwh||'-')+' kWh'],
+        ['T2 afgenomen',(p1.total_power_import_t2_kwh||'-')+' kWh'],
+        ['T1 teruggelev.',(p1.total_power_export_t1_kwh||'-')+' kWh'],
+        ['T2 teruggelev.',(p1.total_power_export_t2_kwh||'-')+' kWh'],
+        ['Spanning L1',(p1.active_voltage_l1_v||'-')+' V'],
+        ['Stroom L1',(p1.active_current_l1_a||'-')+' A']
+      ];
+      for(var i=0;i<p1rows.length;i++){
+        html += '<div class="slot-row"><div style="font-size:12px;color:var(--ink2);flex:1">'+p1rows[i][0]+'</div><div style="font-family:DM Mono,monospace;font-size:12px;font-weight:500">'+p1rows[i][1]+'</div></div>';
+      }
+      html += '</div>';
+    }
+    html += '<button onclick="refreshP1()" style="width:100%;background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px;font-family:DM Mono,monospace;font-size:11px;color:var(--ink2);cursor:pointer;margin-top:4px">↻ P1 vernieuwen</button>';
+  }
+
+  // ── ZON TAB ──────────────────────────────────────────────────────────────
+  else if(activeTab==='zon') {
+    html += '<div class="card" style="border-color:#e879f9;background:var(--neg-l)">';
+    html += '<div class="card-label" style="color:var(--neg)">⚡ Negatieve Stroomprijzen — SolarEdge Actie Vereist</div>';
+    html += '<div style="font-size:12px;color:var(--neg);margin-bottom:12px;line-height:1.6">Bij negatieve prijzen <strong>betaal je om stroom te leveren</strong>. Zet je SolarEdge omvormer dan uit of beperk de productie.</div>';
+
+    if(negHours.length===0){
+      html += '<div style="background:var(--green-l);border:1px solid #86efac;border-radius:8px;padding:12px;font-size:13px;color:var(--green)">✅ Geen negatieve prijzen verwacht de komende 36 uur.</div>';
+    } else {
+      var totalCost=0;
+      for(var i=0;i<negHours.length;i++) totalCost+=Math.abs(negHours[i].price)*PANEL_KWP;
+      html += '<div style="background:#fae8ff;border:1px solid #e879f9;border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:12px;color:var(--neg)">';
+      html += '⚠️ <strong>'+negHours.length+' uur</strong> negatieve prijs verwacht. Te vermijden: <strong>'+euro2(totalCost)+'</strong></div>';
+      for(var i=0;i<negHours.length;i++){
+        var p=negHours[i];
+        var fc4=null; for(var j=0;j<forecast.length;j++){if(forecast[j].time.getHours()===p.time.getHours()&&forecast[j].time.toDateString()===p.time.toDateString()){fc4=forecast[j];break;}}
+        var sw4=fc4?Math.round(calcSolar(fc4.cloud,fc4.rad,PANEL_KWP)):0;
+        var dayLabel4=p.time.toDateString()===now.toDateString()?'Vandaag':'Morgen';
+        html += '<div class="slot-row">';
+        html += '<div style="min-width:42px;font-family:DM Mono,monospace;font-size:13px;font-weight:500;color:var(--neg)">'+hStr(p.time.getHours())+'</div>';
+        html += '<div style="flex:1"><div style="font-size:10px;color:var(--ink3)">'+dayLabel4+'</div>';
+        if(sw4>100) html += '<div style="font-size:9px;color:var(--solar)">☀️ '+sw4+'W opwekking</div>';
+        html += '</div>';
+        html += '<div style="text-align:right">';
+        html += '<div style="font-family:DM Mono,monospace;font-size:12px;font-weight:500;color:var(--neg)">'+euro(p.price)+'/kWh</div>';
+        html += '<div style="font-size:9px;color:var(--red)">−'+euro2(Math.abs(p.price)*PANEL_KWP)+' bij niet uitzetten</div>';
+        html += '</div></div>';
+      }
+    }
+    html += '</div>';
+
+    // Action guide
+    html += '<div class="card"><div class="card-label">Wat te doen</div>';
+    var steps=[
+      ['1️⃣','mySolarEdge app','Ga naar Instellingen → Omvormer → Productie stoppen. Werkt alleen als Power Control geactiveerd is.'],
+      ['2️⃣','Installateur bellen','Vraag om Power Control te activeren. Zeg: "Ik wil bij negatieve ENTSO-E prijzen mijn productie kunnen stoppen."'],
+      ['3️⃣','Handmatig uitschakelen','Noodoplossing: zet de groep van je omvormer in de meterkast uit.'],
+      ['4️⃣','Home Assistant','Met Home Assistant + SolarEdge + ENTSO-E kan dit volledig automatisch.']
+    ];
+    for(var i=0;i<steps.length;i++){
+      html += '<div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--bg3)">';
+      html += '<div style="font-size:18px;min-width:28px">'+steps[i][0]+'</div>';
+      html += '<div><div style="font-size:12px;font-weight:600;color:var(--ink);margin-bottom:3px">'+steps[i][1]+'</div>';
+      html += '<div style="font-size:11px;color:var(--ink2);line-height:1.5">'+steps[i][2]+'</div></div></div>';
+    }
+    html += '</div>';
+  }
+
+  document.getElementById('content').innerHTML = html;
+}
+
+function renderStatus() {
+  var now      = new Date();
+  var prices   = G.prices||[];
+  var curPrice = null;
+  for(var i=0;i<prices.length;i++){
+    if(prices[i].time.getHours()===now.getHours()&&prices[i].time.toDateString()===now.toDateString()){ curPrice=prices[i]; break; }
+  }
+  var next36  = prices.filter(function(p){ return p.time>=now; }).slice(0,36);
+  var negNow  = curPrice && curPrice.price<=0;
+  var negSoon = next36.filter(function(p){ return p.price<=0&&p.time>now&&(p.time-now)<4*3600000; });
+
+  var html = '';
+  html += '<div class="status-item"><span class="s-dot" style="background:'+(G.priceSource==='eneco'?'#166534':'#92400e')+'"></span>'+(G.priceSource==='eneco'?'Live Eneco':'Verwacht patroon')+'</div>';
+  if(curPrice) html += '<div class="status-item"><span class="s-dot" style="background:'+pColor(curPrice.price)+'"></span>'+euro(curPrice.price)+'/kWh</div>';
+  html += '<div class="status-item"><span class="s-dot" style="background:'+(G.p1?'#166534':'#9c9488')+'"></span>'+(G.p1?'P1 Live':'P1 Offline')+'</div>';
+  if(G.wx) html += '<div class="status-item">'+(WI[G.wx.code]||'')+' '+G.wx.temp+'°C</div>';
+  if(negNow) html += '<div class="status-item" style="color:var(--neg);font-weight:600"><span class="s-dot" style="background:#e879f9"></span>⚡ NEG. PRIJS NU</div>';
+  else if(negSoon.length>0) html += '<div class="status-item" style="color:var(--neg)"><span class="s-dot" style="background:#e879f9"></span>⚡ Neg. prijs om '+hStr(negSoon[0].time.getHours())+'</div>';
+  document.getElementById('status-bar').innerHTML = html;
+
+  // Update zon tab badge
+  var negAll = next36.filter(function(p){ return p.price<=0; });
+  var tabZon = document.getElementById('tab-zon');
+  if(tabZon){
+    if(negAll.length>0){
+      tabZon.textContent = '⚡ Zon ('+negAll.length+')';
+      tabZon.classList.add('alert');
+    } else {
+      tabZon.textContent = '⚡ Zon';
+      tabZon.classList.remove('alert');
+    }
+  }
+}
+
+async function refreshP1() {
+  G.p1 = await fetchP1();
+  renderStatus();
+  renderTab();
+}
+
+async function init() {
+  var now = new Date();
+  document.getElementById('hdr-date').innerHTML =
+    now.toLocaleDateString('nl-NL',{weekday:'short',day:'numeric',month:'short'})+'<br/>'+
+    now.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('content').innerHTML = '<div class="loading">Gegevens ophalen…</div>';
+
+  var loc = await getLocation();
+  var priceResult = await fetchPrices();
+  var wxResult = null;
+  try { wxResult = await fetchWeather(loc.lat, loc.lon); } catch(e) {}
+  var p1 = await fetchP1();
+
+  G = {
+    prices:      priceResult.prices,
+    priceSource: priceResult.source,
+    wx:          wxResult ? wxResult.cur : null,
+    forecast:    wxResult ? wxResult.forecast : [],
+    p1:          p1,
+    loc:         loc
+  };
+
+  renderStatus();
+  renderTab();
+}
+
+setInterval(function(){
+  var now = new Date();
+  document.getElementById('hdr-date').innerHTML =
+    now.toLocaleDateString('nl-NL',{weekday:'short',day:'numeric',month:'short'})+'<br/>'+
+    now.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});
+  renderStatus();
+}, 60000);
+
+setInterval(init, 3600000);
+
+init();
+</script>
+</body>
+</html>
